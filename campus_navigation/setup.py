@@ -25,5 +25,4 @@ setup(
             'bi_agent = campus_navigation.bi_agent:main',
         ],
     },
-    # Add networkx and matplotlib as dependencies
 )

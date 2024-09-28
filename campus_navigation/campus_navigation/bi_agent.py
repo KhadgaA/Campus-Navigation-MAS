@@ -5,8 +5,8 @@ import time
 import random
 
 class BIAgent(Node):
-    def __init__(self):
-        super().__init__('bi_agent')
+    def __init__(self, agent_id, building_id):
+        super().__init__(f'bi_agent_{agent_id}_{building_id}')
         self.subscription = self.create_subscription(
             NavigationRequest,
             'navigation_request',
@@ -20,6 +20,8 @@ class BIAgent(Node):
         self.violation_events = 0
         self.oos_duration = 0
         self.oos_start_time = None
+        self.agent_id = agent_id
+        self.building_id = building_id
 
     def listener_callback(self, msg):
         if self.is_out_of_service():
@@ -91,16 +93,17 @@ class BIAgent(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    bi_agent = BIAgent()
+    bi_agents = [BIAgent(i, building) for i in range(1, 3) for building in ['A', 'B', 'C']]
 
     # Simulate random OOS notifications with shorter durations
-    bi_agent.send_oos_notification(random.randint(5, 10))
-    time.sleep(5)  # Wait for some time before sending another OOS notification
-    bi_agent.send_oos_notification(random.randint(5, 10))
+    for agent in bi_agents:
+        agent.send_oos_notification(random.randint(5, 10))
+        time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
 
-    rclpy.spin(bi_agent)
-    bi_agent.log_performance()
-    bi_agent.destroy_node()
+    rclpy.spin(bi_agents[0])  # Spin one of the agents to keep the node running
+    for agent in bi_agents:
+        agent.log_performance()
+        agent.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
