@@ -25,18 +25,23 @@ class VisitorAgent(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    visitor_agents = [VisitorAgent(f'visitor_{i}') for i in range(1, 4)]
+    visitor_id_counter = 1
 
-    buildings = ['Building A', 'Building B', 'Building C']
-    for agent in visitor_agents:
+    def spawn_visitor():
+        nonlocal visitor_id_counter
+        visitor_agent = VisitorAgent(f'visitor_{visitor_id_counter}')
+        visitor_id_counter += 1
+        buildings = ['Building A', 'Building B', 'Building C']
         building = random.choice(buildings)
-        agent.send_navigation_request(building)
-        agent.move_to_building(building)
-        time.sleep(random.randint(1, 5))  # Simulate random meeting durations
+        visitor_agent.send_navigation_request(building)
+        visitor_agent.move_to_building(building)
+        visitor_agent.destroy_node()
 
-    rclpy.spin(visitor_agents[0])  # Spin one of the agents to keep the node running
-    for agent in visitor_agents:
-        agent.destroy_node()
+    # Spawn visitors at random intervals
+    while rclpy.ok():
+        spawn_visitor()
+        time.sleep(random.randint(5, 15))  # Random interval between 5 and 15 seconds
+
     rclpy.shutdown()
 
 if __name__ == '__main__':

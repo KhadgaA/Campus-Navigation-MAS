@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, AgentMovement
 import time
+import random
 
 class CIAgent(Node):
     def __init__(self, agent_id):
@@ -18,6 +19,7 @@ class CIAgent(Node):
         self.visitors_entertained = 0
         self.violation_events = 0
         self.agent_id = agent_id
+        self.visitor_queue = []
 
     def listener_callback(self, msg):
         self.get_logger().info(f'Received navigation response: {msg}')
@@ -47,6 +49,11 @@ class CIAgent(Node):
 
     def log_performance(self):
         self.get_logger().info(f'CI Agent Performance: Visitors entertained = {self.visitors_entertained}, Violation events = {self.violation_events}')
+
+    def handle_visitor(self, visitor_id, building_id):
+        self.visitor_queue.append((visitor_id, building_id))
+        if len(self.visitor_queue) == 1:  # If this is the only visitor in the queue
+            self.send_navigation_request(visitor_id, building_id)
 
 def main(args=None):
     rclpy.init(args=args)
