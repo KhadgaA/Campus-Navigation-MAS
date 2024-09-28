@@ -3,6 +3,7 @@ from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, OOSNotification, AgentMovement
 import time
 import random
+import networkx as nx
 
 class BIAgent(Node):
     def __init__(self, agent_id, building_id):
@@ -22,6 +23,24 @@ class BIAgent(Node):
         self.oos_start_time = None
         self.agent_id = agent_id
         self.building_id = building_id
+        self.campus_graph = self.create_campus_graph()
+
+    def create_campus_graph(self):
+        G = nx.DiGraph()
+
+        # Add nodes (locations)
+        G.add_node("Entrance")
+        G.add_node("Building A")
+        G.add_node("Building B")
+        G.add_node("Building C")
+
+        # Add edges (paths)
+        G.add_edge("Entrance", "Building A", weight=5)
+        G.add_edge("Entrance", "Building B", weight=10)
+        G.add_edge("Building A", "Building C", weight=7)
+        G.add_edge("Building B", "Building C", weight=3)
+
+        return G
 
     def listener_callback(self, msg):
         if self.is_out_of_service():

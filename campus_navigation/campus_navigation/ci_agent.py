@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, AgentMovement
 import time
+import networkx as nx
 
 class CIAgent(Node):
     def __init__(self, agent_id):
@@ -19,6 +20,24 @@ class CIAgent(Node):
         self.violation_events = 0
         self.agent_id = agent_id
         self.visitor_queue = []
+        self.campus_graph = self.create_campus_graph()
+
+    def create_campus_graph(self):
+        G = nx.DiGraph()
+
+        # Add nodes (locations)
+        G.add_node("Entrance")
+        G.add_node("Building A")
+        G.add_node("Building B")
+        G.add_node("Building C")
+
+        # Add edges (paths)
+        G.add_edge("Entrance", "Building A", weight=5)
+        G.add_edge("Entrance", "Building B", weight=10)
+        G.add_edge("Building A", "Building C", weight=7)
+        G.add_edge("Building B", "Building C", weight=3)
+
+        return G
 
     def listener_callback(self, msg):
         self.get_logger().info(f'Received navigation response: {msg}')
@@ -27,12 +46,15 @@ class CIAgent(Node):
         self.visitors_entertained += 1
 
     def send_navigation_request(self, visitor_id, building_id):
-        msg = NavigationRequest()
-        msg.ci_agent_id = str(self.agent_id)  # Convert agent_id to string
-        msg.visitor_id = visitor_id
-        msg.building_id = building_id
-        self.publisher_.publish(msg)
-        self.get_logger().info(f'Published navigation request: {msg}')
+        path = nx.shortest_path(self.campus_graph, source=self.current_location, target=building_id)
+        for i in range(len(path) - 1):
+            msg = NavigationRequest()
+            msg.ci_agent_id = str(self.agent_id)  # Convert agent_id to string
+            msg.visitor_id = visitor_id
+            msg.building_id = path[i + 1]
+            self.publisher_.publish(msg)
+            self.get_logger().info(f'Published navigation request: {msg}')
+            self.move_agent(msg.ci_agent_id, msg.visitor_id, msg.building_id)
 
     def move_agent(self, ci_agent_id, visitor_id, building_id):
         # Simulate movement by updating the current location
@@ -40,7 +62,7 @@ class CIAgent(Node):
         movement_msg = AgentMovement()
         movement_msg.agent_id = ci_agent_id
         movement_msg.visitor_id = visitor_id
-        movement_msg.from_location = 'Entrance'
+        movement_msg.from_location = self.current_location
         movement_msg.to_location = building_id
         self.movement_publisher_.publish(movement_msg)
         self.get_logger().info(f'Published agent movement: {movement_msg}')
