@@ -93,7 +93,7 @@ class BIAgent(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    bi_agents = [BIAgent(i, building) for i in range(1, 3) for building in ['A', 'B', 'C']]
+    bi_agents = [BIAgent(i, building) for i in range(1, 3) for building in ['A', 'B', 'C']]  # Start with 2 BI agents for each building
 
     # Simulate random OOS notifications with shorter durations
     for agent in bi_agents:

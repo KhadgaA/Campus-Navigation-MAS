@@ -10,6 +10,7 @@ class VisitorAgent(Node):
         self.publisher_ = self.create_publisher(NavigationRequest, 'navigation_request', 10)
         self.visitor_id = visitor_id
         self.current_location = 'Entrance'
+        self.buildings_to_explore = ['Building A', 'Building B', 'Building C']
 
     def send_navigation_request(self, building_id):
         msg = NavigationRequest()
@@ -23,6 +24,16 @@ class VisitorAgent(Node):
         self.get_logger().info(f'Visitor {self.visitor_id} moved to {building_id}')
         time.sleep(2)  # Simulate movement delay
 
+    def explore_buildings(self):
+        for building in self.buildings_to_explore:
+            self.send_navigation_request(building)
+            self.move_to_building(building)
+            time.sleep(random.randint(5, 10))  # Simulate exploring time
+
+        # After exploring all buildings, request to be escorted back to the entrance
+        self.send_navigation_request('Entrance')
+        self.move_to_building('Entrance')
+
 def main(args=None):
     rclpy.init(args=args)
     visitor_id_counter = 1
@@ -31,10 +42,7 @@ def main(args=None):
         nonlocal visitor_id_counter
         visitor_agent = VisitorAgent(f'visitor_{visitor_id_counter}')
         visitor_id_counter += 1
-        buildings = ['Building A', 'Building B', 'Building C']
-        building = random.choice(buildings)
-        visitor_agent.send_navigation_request(building)
-        visitor_agent.move_to_building(building)
+        visitor_agent.explore_buildings()
         visitor_agent.destroy_node()
 
     # Spawn visitors at random intervals
