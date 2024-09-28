@@ -23,6 +23,7 @@ setup(
             'visualization_node = campus_navigation.visualization_node:main',
             'ci_agent = campus_navigation.ci_agent:main',
             'bi_agent = campus_navigation.bi_agent:main',
+        'visitor_agent = campus_navigation.visitor_agent:main',
         ],
     },
 )

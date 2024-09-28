@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, AgentMovement
 import time
-import random
 
 class CIAgent(Node):
     def __init__(self, agent_id):
@@ -52,15 +51,6 @@ class CIAgent(Node):
 def main(args=None):
     rclpy.init(args=args)
     ci_agents = [CIAgent(i) for i in range(1, 4)]
-
-    # Simulate random visitors
-    visitors = ['visitor_1', 'visitor_2', 'visitor_3']
-    buildings = ['Building A', 'Building B', 'Building C']
-    for visitor in visitors:
-        building = random.choice(buildings)
-        ci_agent = random.choice(ci_agents)
-        ci_agent.send_navigation_request(visitor, building)
-        time.sleep(random.randint(1, 5))  # Simulate random meeting durations
 
     rclpy.spin(ci_agents[0])  # Spin one of the agents to keep the node running
     for agent in ci_agents:
