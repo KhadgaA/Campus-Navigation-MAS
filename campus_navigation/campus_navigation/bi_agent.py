@@ -58,6 +58,10 @@ class BIAgent(Node):
             self.get_logger().info(f'BI Agent {self.get_name()} is out of service. Cannot handle request.')
             return
 
+        if msg.building_id != self.building_id:
+            self.get_logger().info(f'BI Agent {self.get_name()} cannot handle request for {msg.building_id}.')
+            return
+
         self.get_logger().info(f'Received navigation request: {msg}')
         response = NavigationResponse()
         response.ci_agent_id = msg.ci_agent_id
@@ -86,7 +90,7 @@ class BIAgent(Node):
         movement_msg = AgentMovement()
         movement_msg.agent_id = ci_agent_id
         movement_msg.visitor_id = visitor_id
-        movement_msg.from_location = 'Entrance'
+        movement_msg.from_location = building_id
         movement_msg.to_location = building_id
         self.movement_publisher_.publish(movement_msg)
         self.get_logger().info(f'Published agent movement: {movement_msg}')
