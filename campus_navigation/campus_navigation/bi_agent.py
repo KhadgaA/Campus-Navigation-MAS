@@ -4,6 +4,8 @@ from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, OO
 import time
 import random
 import networkx as nx
+import asyncio
+from rclpy.executors import MultiThreadedExecutor
 
 class BIAgent(Node):
     def __init__(self, agent_id, building_id):
@@ -125,21 +127,52 @@ class BIAgent(Node):
     def log_performance(self):
         self.get_logger().info(f'BI Agent Performance: CI agents guided = {self.ci_agents_guided}, Violation events = {self.violation_events}')
 
-def main(args=None):
-    rclpy.init(args=args)
-    bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  # Start with 2 BI agents for each building
+# def main(args=None):
+#     rclpy.init(args=args)
+#     bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  # Start with 2 BI agents for each building
 
-    # Simulate random OOS notifications with shorter durations
-    
-    # for agent in bi_agents:
-    #     agent.send_oos_notification(random.randint(5, 10))
-    #     time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
+#     # Simulate random OOS notifications with shorter durations
 
-    rclpy.spin(bi_agents[0])  # Spin one of the agents to keep the node running
+#     # for agent in bi_agents:
+#     #     agent.send_oos_notification(random.randint(5, 10))
+#     #     time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
+
+#     rclpy.spin(bi_agents[0])  # Spin one of the agents to keep the node running
+#     for agent in bi_agents:
+#         agent.log_performance()
+#         agent.destroy_node()
+#     rclpy.shutdown()
+async def send_oos_notifications(agent):
+    """Simulate random OOS notifications asynchronously."""
+    while True:
+        duration = random.randint(5, 10)  # Random duration for OOS notification
+        await agent.send_oos_notification(duration)
+        wait_time = random.randint(1, 5)  # Random wait time before sending the next notification
+        await asyncio.sleep(wait_time)
+
+async def spin_agent(agent):
+    """Spin the agent in a separate thread."""
+    executor = MultiThreadedExecutor()
+    rclpy.spin(agent, executor=executor)
+
+async def main():
+    rclpy.init(args=None)
+
+    # Initialize the BI agents for each building
+    bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]
+
+    # Create tasks to spin agents and send notifications asynchronously
+    spin_tasks = [asyncio.create_task(spin_agent(agent)) for agent in bi_agents]
+    notification_tasks = [asyncio.create_task(send_oos_notifications(agent)) for agent in bi_agents]
+
+    # Await all spinning and notification tasks
+    await asyncio.gather(*spin_tasks, *notification_tasks)
+
+    # Log performance and destroy nodes after completion
     for agent in bi_agents:
         agent.log_performance()
         agent.destroy_node()
-    rclpy.shutdown()
 
+    rclpy.shutdown()
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

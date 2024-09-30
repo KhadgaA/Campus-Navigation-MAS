@@ -3,6 +3,8 @@ from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, AgentMovement
 import time
 import networkx as nx
+import asyncio
+from rclpy.executors import MultiThreadedExecutor
 
 class CIAgent(Node):
     def __init__(self, agent_id):
@@ -87,15 +89,48 @@ class CIAgent(Node):
         if len(self.visitor_queue) == 1:  # If this is the only visitor in the queue
             self.send_navigation_request(visitor_id, building_id)
 
-def main(args=None):
-    rclpy.init(args=args)
-    ci_agents = [CIAgent(i) for i in range(1, 4)]  # Start with 3 CI agents
+# def main(args=None):
+#     rclpy.init(args=args)
+#     ci_agents = [CIAgent(i) for i in range(1, 4)]  # Start with 3 CI agents
 
-    rclpy.spin(ci_agents[0])  # Spin one of the agents to keep the node running
-    for agent in ci_agents:
-        agent.log_performance()
-        agent.destroy_node()
-    rclpy.shutdown()
+#     rclpy.spin(ci_agents[0])  # Spin one of the agents to keep the node running
+#     for agent in ci_agents:
+#         agent.log_performance()
+#         agent.destroy_node()
+#     rclpy.shutdown()
+
+async def spin_agent(agent):
+    """ Spin the agent asynchronously. """
+    executor = MultiThreadedExecutor()
+    rclpy.spin(agent, executor=executor)
+
+async def main():
+    rclpy.init(args=None)
+
+    # Initialize the CI agents
+    ci_agents = [CIAgent(i) for i in range(1, 4)]
+    
+    # Spin each agent asynchronously
+    spin_tasks = [spin_agent(agent) for agent in ci_agents]
+
+    try:
+        # Wait for the agents to spin
+        await asyncio.gather(*spin_tasks)
+    except Exception as e:
+        print(f"Error encountered: {e}")
+    finally:
+        # Log performance and destroy nodes after spinning completes
+        for agent in ci_agents:
+            agent.log_performance()
+            agent.destroy_node()
+
+        rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    rclpy.init(args=None)  # Initialize ROS 2 nodes outside asyncio
+    loop = asyncio.get_event_loop()
+    
+    try:
+        loop.run_until_complete(main())  # Use asyncio's event loop
+    finally:
+        loop.close()  # Ensure cleanup
