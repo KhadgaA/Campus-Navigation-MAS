@@ -51,6 +51,7 @@ class VisitorAgent(Node):
             self.publisher_.publish(msg)
             self.get_logger().info(f'Published navigation request: {msg}')
             self.move_to_building(path[i + 1])
+            time.sleep(1)
 
     def move_to_building(self, building_id):
         self.current_location = building_id
@@ -58,10 +59,11 @@ class VisitorAgent(Node):
         time.sleep(2)  # Simulate movement delay
 
     def explore_buildings(self):
-        for building in self.buildings_to_explore:
-            self.send_navigation_request(building)
-            time.sleep(random.randint(5, 10))  # Simulate exploring time
-
+        # for building in self.buildings_to_explore:
+        building = random.choice(self.buildings_to_explore)
+        self.get_logger().info(f'Visitor to explore: {building}')
+        self.send_navigation_request(building)
+        time.sleep(random.randint(5, 10))  # Simulate exploring time
         # After exploring all buildings, request to be escorted back to the entrance
         self.send_navigation_request('Entrance')
 

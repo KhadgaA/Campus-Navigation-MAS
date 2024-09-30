@@ -127,12 +127,13 @@ class BIAgent(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    bi_agents = [BIAgent(i, building) for i in range(1, 3) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  # Start with 2 BI agents for each building
+    bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  # Start with 2 BI agents for each building
 
     # Simulate random OOS notifications with shorter durations
-    for agent in bi_agents:
-        agent.send_oos_notification(random.randint(5, 10))
-        time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
+    
+    # for agent in bi_agents:
+    #     agent.send_oos_notification(random.randint(5, 10))
+    #     time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
 
     rclpy.spin(bi_agents[0])  # Spin one of the agents to keep the node running
     for agent in bi_agents:
