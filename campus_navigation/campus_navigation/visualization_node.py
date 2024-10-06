@@ -27,74 +27,90 @@ class VisualizationNode(Node):
             'agent_movement',
             self.movement_callback,
             10)
-        self.subscription_request  # prevent unused variable warning
-        self.subscription_response  # prevent unused variable warning
-        self.subscription_oos  # prevent unused variable warning
-        self.subscription_movement  # prevent unused variable warning
+        self.subscription_request  
+        self.subscription_response  
+        self.subscription_oos  
+        self.subscription_movement  
 
         self.campus_graph = self.create_campus_graph()
         self.pos = nx.spring_layout(self.campus_graph)
         self.agent_positions = {}
         self.draw_graph(self.campus_graph)
 
-        # Timer to periodically redraw the graph
+        
         self.timer = self.create_timer(1.0, self.timer_callback)
 
     def request_callback(self, msg):
         self.get_logger().info(f'Received navigation request: {msg}')
-        # Update the graph with the request information
+        
         self.update_graph(msg.ci_agent_id, msg.visitor_id, msg.building_id, 'request')
 
     def response_callback(self, msg):
         self.get_logger().info(f'Received navigation response: {msg}')
-        # Update the graph with the response information
+        
         self.update_graph(msg.ci_agent_id, msg.visitor_id, msg.building_id, 'response')
 
     def oos_callback(self, msg):
         self.get_logger().info(f'Received OOS notification: {msg}')
-        # Update the graph with the OOS information
+        
         self.update_graph(msg.bi_agent_id, None, None, 'oos')
 
     def movement_callback(self, msg):
         self.get_logger().info(f'Received agent movement: {msg}')
-        # Update the graph with the movement information
+        
         self.update_graph(msg.agent_id, msg.visitor_id, msg.to_location, 'movement')
 
     def create_campus_graph(self):
-        G = nx.Graph()
+        G = nx.Graph()  
 
-        # Add nodes (locations)
-        G.add_node("Entrance")
-        G.add_node("Building A")
-        G.add_node("Building B")
-        G.add_node("Building C")
-        G.add_node("Building D")
-        G.add_node("Building E")
-        G.add_node("Library")
-        G.add_node("Cafeteria")
-        G.add_node("Gym")
+        
+        nodes = [
+            "Entrance", "Building A", "Building B", "Building C",
+            "Building D", "Building E", "Library", "Cafeteria", "Gym",
+            "Lecture Hall", "Research Center", "Dormitory", "Auditorium"
+        ]
+        G.add_nodes_from(nodes)
 
-        # Add edges (paths)
-        G.add_edge("Entrance", "Building A", weight=5)
-        G.add_edge("Entrance", "Building B", weight=10)
-        G.add_edge("Building A", "Building C", weight=7)
-        G.add_edge("Building B", "Building C", weight=3)
-        G.add_edge("Building C", "Building D", weight=8)
-        G.add_edge("Building D", "Building E", weight=6)
-        G.add_edge("Building E", "Library", weight=4)
-        G.add_edge("Library", "Cafeteria", weight=2)
-        G.add_edge("Cafeteria", "Gym", weight=9)
-        G.add_edge("Gym", "Building A", weight=12)
+        
+        edges = [
+            ("Entrance", "Building A", 5),
+            ("Entrance", "Building B", 10),
+            ("Building A", "Lecture Hall", 3),
+            ("Building A", "Building C", 7),
+            ("Building B", "Building C", 3),
+            ("Building C", "Building D", 8),
+            ("Building D", "Building E", 6),
+            ("Building E", "Library", 4),
+            ("Library", "Cafeteria", 2),
+            ("Cafeteria", "Gym", 9),
+            ("Gym", "Building A", 12),
+            ("Building C", "Research Center", 5),
+            ("Building D", "Auditorium", 4),
+            ("Research Center", "Building E", 7),
+            ("Dormitory", "Building B", 10),
+            ("Auditorium", "Entrance", 15),
+        ]
+        
+        
+        G.add_weighted_edges_from(edges)
+
+        
+        for node in G.nodes():
+            if G.degree(node) == 1:  
+                neighbors = list(G.neighbors(node))
+                for neighbor in neighbors:
+                    if not G.has_edge(neighbor, node):  
+                        G.add_edge(neighbor, node, weight=G[node][neighbor]['weight'])  
 
         return G
 
     def draw_graph(self, G):
-        plt.clf()  # Clear the current figure
+        plt.clf()  
         nx.draw(G, self.pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10, font_weight='bold')
         edge_labels = nx.get_edge_attributes(G, 'weight')
         nx.draw_networkx_edge_labels(G, self.pos, edge_labels=edge_labels)
 
-        # Draw agents and visitors
+        
         for agent_id, position in self.agent_positions.items():
             if 'ci_agent' in agent_id:
                 color = 'green'
@@ -105,12 +121,12 @@ class VisualizationNode(Node):
             if position in self.pos:
                 nx.draw_networkx_nodes(G, self.pos, nodelist=[position], node_color=color, node_size=300)
 
-        plt.ion()  # Turn on interactive mode
-        plt.draw()  # Draw the graph
-        plt.pause(0.01)  # Pause to update the graph
+        plt.ion()  
+        plt.draw()  
+        plt.pause(0.01)  
 
     def update_graph(self, agent_id, visitor_id, building_id, event_type):
-        # Update the graph based on the event type
+        
         if event_type == 'request':
             self.get_logger().info(f'CI Agent {agent_id} is escorting Visitor {visitor_id} to Building {building_id}')
             self.agent_positions[agent_id] = building_id
@@ -126,10 +142,10 @@ class VisualizationNode(Node):
             if visitor_id:
                 self.agent_positions[visitor_id] = building_id
 
-        self.draw_graph(self.campus_graph)  # Redraw the graph
+        self.draw_graph(self.campus_graph)  
 
     def timer_callback(self):
-        self.draw_graph(self.campus_graph)  # Periodically redraw the graph
+        self.draw_graph(self.campus_graph)  
 
 def main(args=None):
     rclpy.init(args=args)
