@@ -11,34 +11,51 @@ class VisitorAgent(Node):
         self.publisher_ = self.create_publisher(NavigationRequest, 'navigation_request', 10)
         self.visitor_id = visitor_id
         self.current_location = 'Entrance'
-        self.buildings_to_explore = ['Building A', 'Building B', 'Building C', 'Building D', 'Building E', 'Library', 'Cafeteria', 'Gym']
+        self.buildings_to_explore = [
+            "Entrance", "Building A", "Building B", "Building C",
+            "Building D", "Building E", "Library", "Cafeteria", "Gym",
+            "Lecture Hall", "Research Center", "Dormitory", "Auditorium"
+        ]
         self.campus_graph = self.create_campus_graph()
-
     def create_campus_graph(self):
-        G = nx.Graph()
+        G = nx.Graph()  
 
-        # Add nodes (locations)
-        G.add_node("Entrance")
-        G.add_node("Building A")
-        G.add_node("Building B")
-        G.add_node("Building C")
-        G.add_node("Building D")
-        G.add_node("Building E")
-        G.add_node("Library")
-        G.add_node("Cafeteria")
-        G.add_node("Gym")
+        nodes = [
+            "Entrance", "Building A", "Building B", "Building C",
+            "Building D", "Building E", "Library", "Cafeteria", "Gym",
+            "Lecture Hall", "Research Center", "Dormitory", "Auditorium"
+        ]
+        G.add_nodes_from(nodes)
 
-        # Add edges (paths)
-        G.add_edge("Entrance", "Building A", weight=5)
-        G.add_edge("Entrance", "Building B", weight=10)
-        G.add_edge("Building A", "Building C", weight=7)
-        G.add_edge("Building B", "Building C", weight=3)
-        G.add_edge("Building C", "Building D", weight=8)
-        G.add_edge("Building D", "Building E", weight=6)
-        G.add_edge("Building E", "Library", weight=4)
-        G.add_edge("Library", "Cafeteria", weight=2)
-        G.add_edge("Cafeteria", "Gym", weight=9)
-        G.add_edge("Gym", "Building A", weight=12)
+        edges = [
+            ("Entrance", "Building A", 5),
+            ("Entrance", "Building B", 10),
+            ("Building A", "Lecture Hall", 3),
+            ("Building A", "Building C", 7),
+            ("Building B", "Building C", 3),
+            ("Building C", "Building D", 8),
+            ("Building D", "Building E", 6),
+            ("Building E", "Library", 4),
+            ("Library", "Cafeteria", 2),
+            ("Cafeteria", "Gym", 9),
+            ("Gym", "Building A", 12),
+            ("Building C", "Research Center", 5),
+            ("Building D", "Auditorium", 4),
+            ("Research Center", "Building E", 7),
+            ("Dormitory", "Building B", 10),
+            ("Auditorium", "Entrance", 15),
+        ]
+        
+        
+        G.add_weighted_edges_from(edges)
+
+        
+        for node in G.nodes():
+            if G.degree(node) == 1:  
+                neighbors = list(G.neighbors(node))
+                for neighbor in neighbors:
+                    if not G.has_edge(neighbor, node):  
+                        G.add_edge(neighbor, node, weight=G[node][neighbor]['weight'])  
 
         return G
 
@@ -46,7 +63,7 @@ class VisitorAgent(Node):
         path = nx.shortest_path(self.campus_graph, source=self.current_location, target=building_id)
         for i in range(len(path) - 1):
             msg = NavigationRequest()
-            msg.visitor_id = self.visitor_id
+            msg.visitor_id = self.visitor_id    
             msg.building_id = path[i + 1]
             self.publisher_.publish(msg)
             self.get_logger().info(f'Published navigation request: {msg}')
@@ -56,15 +73,15 @@ class VisitorAgent(Node):
     def move_to_building(self, building_id):
         self.current_location = building_id
         self.get_logger().info(f'Visitor {self.visitor_id} moved to {building_id}')
-        time.sleep(2)  # Simulate movement delay
+        time.sleep(2)  
 
     def explore_buildings(self):
-        # for building in self.buildings_to_explore:
+        
         building = random.choice(self.buildings_to_explore)
         self.get_logger().info(f'Visitor to explore: {building}')
         self.send_navigation_request(building)
-        time.sleep(random.randint(5, 10))  # Simulate exploring time
-        # After exploring all buildings, request to be escorted back to the entrance
+        time.sleep(random.randint(5, 10))  
+        
         self.send_navigation_request('Entrance')
 
 def main(args=None):
@@ -78,10 +95,10 @@ def main(args=None):
         visitor_agent.explore_buildings()
         visitor_agent.destroy_node()
 
-    # Spawn visitors at random intervals
+    
     while rclpy.ok():
         spawn_visitor()
-        time.sleep(random.randint(5, 15))  # Random interval between 5 and 15 seconds
+        time.sleep(random.randint(5, 15))  
 
     rclpy.shutdown()
 

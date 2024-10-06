@@ -16,7 +16,7 @@ class BIAgent(Node):
         self.publisher_ = self.create_publisher(NavigationResponse, 'navigation_response', 10)
         self.oos_publisher_ = self.create_publisher(OOSNotification, 'oos_notification', 10)
         self.movement_publisher_ = self.create_publisher(AgentMovement, 'agent_movement', 10)
-        self.subscription  # prevent unused variable warning
+        self.subscription  
         self.ci_agents_guided = 0
         self.violation_events = 0
         self.oos_duration = 0
@@ -26,30 +26,46 @@ class BIAgent(Node):
         self.campus_graph = self.create_campus_graph()
 
     def create_campus_graph(self):
-        G = nx.Graph()
+        G = nx.Graph()  
 
-        # Add nodes (locations)
-        G.add_node("Entrance")
-        G.add_node("Building A")
-        G.add_node("Building B")
-        G.add_node("Building C")
-        G.add_node("Building D")
-        G.add_node("Building E")
-        G.add_node("Library")
-        G.add_node("Cafeteria")
-        G.add_node("Gym")
+        
+        nodes = [
+            "Entrance", "Building A", "Building B", "Building C",
+            "Building D", "Building E", "Library", "Cafeteria", "Gym",
+            "Lecture Hall", "Research Center", "Dormitory", "Auditorium"
+        ]
+        G.add_nodes_from(nodes)
 
-        # Add edges (paths)
-        G.add_edge("Entrance", "Building A", weight=5)
-        G.add_edge("Entrance", "Building B", weight=10)
-        G.add_edge("Building A", "Building C", weight=7)
-        G.add_edge("Building B", "Building C", weight=3)
-        G.add_edge("Building C", "Building D", weight=8)
-        G.add_edge("Building D", "Building E", weight=6)
-        G.add_edge("Building E", "Library", weight=4)
-        G.add_edge("Library", "Cafeteria", weight=2)
-        G.add_edge("Cafeteria", "Gym", weight=9)
-        G.add_edge("Gym", "Building A", weight=12)
+        
+        edges = [
+            ("Entrance", "Building A", 5),
+            ("Entrance", "Building B", 10),
+            ("Building A", "Lecture Hall", 3),
+            ("Building A", "Building C", 7),
+            ("Building B", "Building C", 3),
+            ("Building C", "Building D", 8),
+            ("Building D", "Building E", 6),
+            ("Building E", "Library", 4),
+            ("Library", "Cafeteria", 2),
+            ("Cafeteria", "Gym", 9),
+            ("Gym", "Building A", 12),
+            ("Building C", "Research Center", 5),
+            ("Building D", "Auditorium", 4),
+            ("Research Center", "Building E", 7),
+            ("Dormitory", "Building B", 10),
+            ("Auditorium", "Entrance", 15),
+        ]
+        
+        
+        G.add_weighted_edges_from(edges)
+
+        
+        for node in G.nodes():
+            if G.degree(node) == 1:  
+                neighbors = list(G.neighbors(node))
+                for neighbor in neighbors:
+                    if not G.has_edge(neighbor, node):  
+                        G.add_edge(neighbor, node, weight=G[node][neighbor]['weight'])  
 
         return G
 
@@ -72,7 +88,7 @@ class BIAgent(Node):
         self.publisher_.publish(response)
         self.get_logger().info(f'Published navigation response: {response}')
 
-        # Publish movement information
+        
         self.move_agent(msg.ci_agent_id, msg.visitor_id, msg.building_id)
         self.ci_agents_guided += 1
 
@@ -86,7 +102,7 @@ class BIAgent(Node):
         self.get_logger().info(f'Published OOS notification: {msg}')
 
     def move_agent(self, ci_agent_id, visitor_id, building_id):
-        # Simulate movement by updating the current location
+        
         movement_msg = AgentMovement()
         movement_msg.agent_id = ci_agent_id
         movement_msg.visitor_id = visitor_id
@@ -94,16 +110,16 @@ class BIAgent(Node):
         movement_msg.to_location = building_id
         self.movement_publisher_.publish(movement_msg)
         self.get_logger().info(f'Published agent movement: {movement_msg}')
-        time.sleep(2)  # Simulate movement delay
+        time.sleep(2)  
 
-        # Simulate exploring the building
+        
         self.explore_building(ci_agent_id, visitor_id, building_id)
 
     def explore_building(self, ci_agent_id, visitor_id, building_id):
         self.get_logger().info(f'BI Agent is exploring {building_id} with {visitor_id}')
-        time.sleep(5)  # Simulate exploring time
+        time.sleep(5)  
 
-        # Return the visitor to the CI agent
+        
         self.return_visitor(ci_agent_id, visitor_id, building_id)
 
     def return_visitor(self, ci_agent_id, visitor_id, building_id):
@@ -114,7 +130,7 @@ class BIAgent(Node):
         movement_msg.to_location = 'Entrance'
         self.movement_publisher_.publish(movement_msg)
         self.get_logger().info(f'Published agent movement: {movement_msg}')
-        time.sleep(2)  # Simulate movement delay
+        time.sleep(2)  
 
     def is_out_of_service(self):
         if self.oos_start_time is None:
@@ -127,15 +143,15 @@ class BIAgent(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  # Start with 2 BI agents for each building
+    bi_agents = [BIAgent(i, building) for i in range(1, 2) for building in ['A', 'B', 'C', 'D', 'E', 'Library', 'Cafeteria', 'Gym']]  
 
-    # Simulate random OOS notifications with shorter durations
     
-    # for agent in bi_agents:
-    #     agent.send_oos_notification(random.randint(5, 10))
-    #     time.sleep(random.randint(1, 5))  # Wait for some time before sending another OOS notification
+    
+    
+    
+    
 
-    rclpy.spin(bi_agents[0])  # Spin one of the agents to keep the node running
+    rclpy.spin(bi_agents[0])  
     for agent in bi_agents:
         agent.log_performance()
         agent.destroy_node()
