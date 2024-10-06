@@ -4,8 +4,6 @@ from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, OO
 import time
 import random
 import networkx as nx
-import asyncio
-from rclpy.executors import MultiThreadedExecutor
 
 class BIAgent(Node):
     def __init__(self, agent_id, building_id):
@@ -157,7 +155,7 @@ def main(args=None):
     for agent in bi_agents:
         agent.log_performance()
         agent.destroy_node()
-
     rclpy.shutdown()
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

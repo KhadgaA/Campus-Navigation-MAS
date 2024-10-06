@@ -3,8 +3,6 @@ from rclpy.node import Node
 from campus_navigation_msgs.msg import NavigationRequest, NavigationResponse, AgentMovement
 import time
 import networkx as nx
-import asyncio
-from rclpy.executors import MultiThreadedExecutor
 
 class CIAgent(Node):
     def __init__(self, agent_id):
@@ -116,10 +114,4 @@ def main(args=None):
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    rclpy.init(args=None)  # Initialize ROS 2 nodes outside asyncio
-    loop = asyncio.get_event_loop()
-    
-    try:
-        loop.run_until_complete(main())  # Use asyncio's event loop
-    finally:
-        loop.close()  # Ensure cleanup
+    main()

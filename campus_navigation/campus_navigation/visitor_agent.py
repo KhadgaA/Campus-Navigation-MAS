@@ -4,7 +4,6 @@ from campus_navigation_msgs.msg import NavigationRequest
 import time
 import random
 import networkx as nx
-import asyncio
 
 class VisitorAgent(Node):
     def __init__(self, visitor_id):
@@ -85,34 +84,11 @@ class VisitorAgent(Node):
         
         self.send_navigation_request('Entrance')
 
-# def main(args=None):
-#     rclpy.init(args=args)
-#     visitor_id_counter = 1
-
-#     def spawn_visitor():
-#         nonlocal visitor_id_counter
-#         visitor_agent = VisitorAgent(f'visitor_{visitor_id_counter}')
-#         visitor_id_counter += 1
-#         visitor_agent.explore_buildings()
-#         visitor_agent.destroy_node()
-
-#     # Spawn visitors at random intervals
-#     while rclpy.ok():
-#         spawn_visitor()
-#         time.sleep(random.randint(5, 15))  # Random interval between 5 and 15 seconds
-
-#     rclpy.shutdown()
-async def spawn_visitor(visitor_id):
-    """Function to create and manage a visitor asynchronously."""
-    visitor_agent = VisitorAgent(f'visitor_{visitor_id}')
-    await visitor_agent.explore_buildings()  # Assuming this function can be awaited or should be async
-    visitor_agent.destroy_node()
-
-async def main():
-    rclpy.init(args=None)
+def main(args=None):
+    rclpy.init(args=args)
     visitor_id_counter = 1
 
-    async def spawn_visitors():
+    def spawn_visitor():
         nonlocal visitor_id_counter
         visitor_agent = VisitorAgent(f'visitor_{visitor_id_counter}')
         visitor_id_counter += 1
@@ -125,5 +101,6 @@ async def main():
         time.sleep(random.randint(5, 15))  
 
     rclpy.shutdown()
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
